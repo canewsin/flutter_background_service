@@ -172,7 +172,6 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
             return;
         }
 
-        isRunning.set(true);
         backgroundEngine = new FlutterEngine(this);
         backgroundEngine.getServiceControlSurface().attachToService(BackgroundService.this, null, true);
 
@@ -181,6 +180,7 @@ public class BackgroundService extends Service implements MethodChannel.MethodCa
 
         dartCallback = new DartExecutor.DartCallback(getAssets(), FlutterMain.findAppBundlePath(), callback);
         backgroundEngine.getDartExecutor().executeDartCallback(dartCallback);
+        isRunning.set(true);
     }
 
     public void receiveData(JSONObject data){
