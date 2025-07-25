@@ -5,7 +5,6 @@ import 'dart:ui';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_background_service/flutter_background_service.dart';
-import 'package:flutter_background_service_android/flutter_background_service_android.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -39,7 +38,6 @@ Future<void> initializeService() async {
     );
   }
 
-
   await flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>()
@@ -58,6 +56,7 @@ Future<void> initializeService() async {
       initialNotificationTitle: 'AWESOME SERVICE',
       initialNotificationContent: 'Initializing',
       foregroundServiceNotificationId: 888,
+      foregroundServiceTypes: [AndroidForegroundType.location],
     ),
     iosConfiguration: IosConfiguration(
       // auto start service
@@ -70,8 +69,6 @@ Future<void> initializeService() async {
       onBackground: onIosBackground,
     ),
   );
-
-  service.startService();
 }
 
 // to ensure this is executed
@@ -149,7 +146,7 @@ void onStart(ServiceInstance service) async {
     }
 
     /// you can see this log in logcat
-    print('FLUTTER BACKGROUND SERVICE: ${DateTime.now()}');
+    debugPrint('FLUTTER BACKGROUND SERVICE: ${DateTime.now()}');
 
     // test using external plugin
     final deviceInfo = DeviceInfoPlugin();
@@ -157,9 +154,7 @@ void onStart(ServiceInstance service) async {
     if (Platform.isAndroid) {
       final androidInfo = await deviceInfo.androidInfo;
       device = androidInfo.model;
-    }
-
-    if (Platform.isIOS) {
+    } else if (Platform.isIOS) {
       final iosInfo = await deviceInfo.iosInfo;
       device = iosInfo.model;
     }
@@ -214,43 +209,32 @@ class _MyAppState extends State<MyApp> {
             ),
             ElevatedButton(
               child: const Text("Foreground Mode"),
-              onPressed: () {
-                FlutterBackgroundService().invoke("setAsForeground");
-              },
+              onPressed: () =>
+                  FlutterBackgroundService().invoke("setAsForeground"),
             ),
             ElevatedButton(
               child: const Text("Background Mode"),
-              onPressed: () {
-                FlutterBackgroundService().invoke("setAsBackground");
-              },
+              onPressed: () =>
+                  FlutterBackgroundService().invoke("setAsBackground"),
             ),
             ElevatedButton(
               child: Text(text),
               onPressed: () async {
                 final service = FlutterBackgroundService();
                 var isRunning = await service.isRunning();
-                if (isRunning) {
-                  service.invoke("stopService");
-                } else {
-                  service.startService();
-                }
+                isRunning
+                    ? service.invoke("stopService")
+                    : service.startService();
 
-                if (!isRunning) {
-                  text = 'Stop Service';
-                } else {
-                  text = 'Start Service';
-                }
-                setState(() {});
+                setState(() {
+                  text = isRunning ? 'Start Service' : 'Stop Service';
+                });
               },
             ),
             const Expanded(
               child: LogView(),
             ),
           ],
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {},
-          child: const Icon(Icons.play_arrow),
         ),
       ),
     );
